@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>offgate业务现状与分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        neutral: '#F5F7FA',
+                        'neutral-dark': '#4E5969',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            }
+            .hover-lift {
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            .hover-lift:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            }
+            .text-balance {
+                text-wrap: balance;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50 transition-all duration-300">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center mb-4 md:mb-0">
+                <i class="fa fa-truck text-primary text-2xl mr-3"></i>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-800">物流业务分析平台</h1>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <input type="text" placeholder="搜索业务..." id="search-input" 
+                        class="pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                    <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                
+                <button id="filter-btn" class="flex items-center space-x-1 bg-white border border-gray-200 rounded-lg px-4 py-2 hover:bg-gray-50 transition-colors">
+                    <i class="fa fa-filter text-gray-500"></i>
+                    <span>筛选</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 概览统计 -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fa fa-bar-chart text-primary mr-2"></i>业务概览
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white rounded-xl p-6 card-shadow hover-lift">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500 text-sm">合作物流商总数</p>
+                            <h3 class="text-3xl font-bold mt-1">8</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <i class="fa fa-handshake-o text-primary"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-success flex items-center">
+                            <i class="fa fa-arrow-up mr-1"></i>12%
+                        </span>
+                        <span class="text-gray-500 ml-2">较上季度</span>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow hover-lift">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500 text-sm">平均利润率</p>
+                            <h3 class="text-3xl font-bold mt-1">0.8%</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
+                            <i class="fa fa-line-chart text-success"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-danger flex items-center">
+                            <i class="fa fa-arrow-down mr-1"></i>0.2%
+                        </span>
+                        <span class="text-gray-500 ml-2">较上季度</span>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow hover-lift">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500 text-sm">客户总数</p>
+                            <h3 class="text-3xl font-bold mt-1">12</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                            <i class="fa fa-users text-accent"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-success flex items-center">
+                            <i class="fa fa-arrow-up mr-1"></i>8%
+                        </span>
+                        <span class="text-gray-500 ml-2">较上季度</span>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow hover-lift">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500 text-sm">年度预期毛利</p>
+                            <h3 class="text-3xl font-bold mt-1">135万</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center">
+                            <i class="fa fa-money text-warning"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-success flex items-center">
+                            <i class="fa fa-arrow-up mr-1"></i>15%
+                        </span>
+                        <span class="text-gray-500 ml-2">较去年</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 利润率图表 -->
+        <section class="mb-12">
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <h2 class="text-xl font-bold mb-6 flex items-center">
+                    <i class="fa fa-pie-chart text-primary mr-2"></i>各物流商利润率对比
+                </h2>
+                <div class="h-80">
+                    <canvas id="profitMarginChart"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 业务详情 -->
+        <section>
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fa fa-list-alt text-primary mr-2"></i>业务详细分析
+            </h2>
+            
+            <!-- 筛选标签 -->
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button class="filter-tag active px-4 py-2 rounded-full bg-primary text-white text-sm" data-filter="all">全部</button>
+                <button class="filter-tag px-4 py-2 rounded-full bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition-colors" data-filter="国际快递公司">国际快递公司</button>
+                <button class="filter-tag px-4 py-2 rounded-full bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition-colors" data-filter="中国邮政">中国邮政</button>
+                <button class="filter-tag px-4 py-2 rounded-full bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition-colors" data-filter="空运公司">空运公司</button>
+                <button class="filter-tag px-4 py-2 rounded-full bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition-colors" data-filter="尾程渠道">尾程渠道</button>
+            </div>
+            
+            <!-- 业务卡片 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- UPS/FEDEX/DHL 卡片 -->
+                <div class="business-card bg-white rounded-xl overflow-hidden card-shadow hover-lift" data-category="国际快递公司">
+                    <div class="bg-primary/10 px-6 py-4 border-b border-gray-100">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-800">UPS/FEDEX/DHL</h3>
+                            <span class="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">国际快递公司</span>
+                        </div>
+                        <div class="mt-2 flex items-center">
+                            <span class="text-lg font-semibold text-primary">1%-1.5%</span>
+                            <span class="text-gray-500 ml-2">利润率</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">客户</p>
+                                <p class="font-medium">物流公司</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">产品属性</p>
+                                <p class="font-medium">自签渠道</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-semibold mb-2 text-gray-800">现阶段支持</h4>
+                            <p class="text-gray-600 text-balance">安排快递物流公司为线上提供优势品快递渠道。</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-semibold mb-2 text-gray-800">不做offgate的影响</h4>
+                            <ul class="list-disc pl-5 text-gray-600 space-y-1">
+                                <li>后续蓝海品市场稳定后，将失去对自有快递渠道的控制。</li>
+                                <li>对于目前线上渠道商的渠道合作互换将失去平衡。</li>
+                                <li>与快递公司切断供需关系后，需要重新合作、价格申请及合作模式重建。</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-800">业务盈利点</h4>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-gray-600 mb-2"><span class="font-medium">UPS:</span> 每年预计运费1-1.2亿人民币，毛利率1.1-1.3%，全年预期120万毛利。客户共3个。</p>
+                                <p class="text-gray-600"><span class="font-medium">FEDEX:</span> 预计今年下半年8-9月份开始项目启动。前期收入每月150-300万，预期毛利率1.1-1.5%，全年预期毛利润15万左右。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 北京/上海邮政 卡片 -->
+                <div class="business-card bg-white rounded-xl overflow-hidden card-shadow hover-lift" data-category="中国邮政">
+                    <div class="bg-secondary/10 px-6 py-4 border-b border-gray-100">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-800">北京/上海邮政</h3>
+                            <span class="px-3 py-1 bg-secondary/20 text-secondary rounded-full text-sm font-medium">中国邮政</span>
+                        </div>
+                        <div class="mt-2 flex items-center">
+                            <span class="text-lg font-semibold text-secondary">0.30%</span>
+                            <span class="text-gray-500 ml-2">利润率</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">客户</p>
+                                <p class="font-medium">物流公司</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">产品属性</p>
+                                <p class="font-medium">自签渠道</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-semibold mb-2 text-gray-800">现阶段支持</h4>
+                            <p class="text-gray-600 text-balance">通过与中国邮政合作开通总对总API对接，为平台节省查询成本</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-semibold mb-2 text-gray-800">不做offgate的影响</h4>
+                            <ul class="list-disc pl-5 text-gray-600 space-y-1">
+                                <li>切断与直接中国邮政（邮路通关模式的合作）</li>
+                                <li>关于政策导向和方向的信息由于切断合作将不再得到反馈</li>
+                                <li>切断与邮政合作，邮政Ongate订单查询将需要通过第三方适配。</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-800">业务盈利点</h4>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-gray-600 mb-2">中国邮政合作项目属于预付款模式，燕文每周根据预期发货量提前支付预付款运费给敦煌。</p>
+                                <p class="text-gray-600">目前合作邮政：北京邮政、上海邮政、山东邮政、杭州邮政、东莞邮政。客户3个。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 菜鸟/DHL 卡片 -->
+                <div class="business-card bg-white rounded-xl overflow-hidden card-shadow hover-lift" data-category="空运公司">
+                    <div class="bg-accent/10 px-6 py-4 border-b border-gray-100">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-800">菜鸟/DHL</h3>
+                            <span class="px-3 py-1 bg-accent/20 text-accent rounded-full text-sm font-medium">空运公司</span>
+                        </div>
+                        <div class="mt-2 flex items-center">
+                            <span class="text-lg font-semibold text-accent">0.7%-0.9%</span>
+                            <span class="text-gray-500 ml-2">利润率</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">客户</p>
+                                <p class="font-medium">物流公司</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">产品属性</p>
+                                <p class="font-medium">自签渠道</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-semibold mb-2 text-gray-800">现阶段支持</h4>
+                            <p class="text-gray-600 text-balance">开始与link服务商合作空运，为线路提供空运服务。</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-semibold mb-2 text-gray-800">不做offgate的影响</h4>
+                            <ul class="list-disc pl-5 text-gray-600 space-y-1">
+                                <li>对于空运干线运输市场缺少敏感度。缺少对于服务商价格涨幅的控制。</li>
+                                <li>空运干线资源缺失后，后续如果遇到旺季以及政策波动，没有固定航线的支持和长期合作供需关系。</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-800">业务盈利点</h4>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-gray-600 mb-2"><span class="font-medium">BSA空运干线业务：</span>按照合同约定毛利0.2/人民币每公斤。客户1个。</p>
+                                <p class="text-gray-600 mb-2"><span class="font-medium">散采空运干线业务：</span>市场价格波动较大。客户5个。</p>
+                                <p class="text-gray-600"><span class="font-medium">项目业务：</span>0.15-0.2/人民币每公斤。客户1个。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 荷兰邮政 卡片 -->
+                <div class="business-card bg-white rounded-xl overflow-hidden card-shadow hover-lift" data-category="尾程渠道">
+                    <div class="bg-warning/10 px-6 py-4 border-b border-gray-100">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-800">荷兰邮政</h3>
+                            <span class="px-3 py-1 bg-warning/20 text-warning rounded-full text-sm font-medium">尾程渠道</span>
+                        </div>
+                        <div class="mt-2 flex items-center">
+                            <span class="text-lg font-semibold text-warning">0.5%-1%</span>
+                            <span class="text-gray-500 ml-2">利润率</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">客户</p>
+                                <p class="font-medium">物流公司</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">产品属性</p>
+                                <p class="font-medium">自签渠道</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-semibold mb-2 text-gray-800">现阶段支持</h4>
+                            <p class="text-gray-600 text-balance">后续平台绑定欧洲尾程时可以直接对接使用。</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-semibold mb-2 text-gray-800">不做offgate的影响</h4>
+                            <ul class="list-disc pl-5 text-gray-600 space-y-1">
+                                <li>切断外部订单业务，尾程线上业务订单量可能无法达到稳定货量，尤其对于除美国以外的其他国家</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-800">业务盈利点</h4>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-gray-600 mb-2"><span class="font-medium">荷兰邮政：</span>客户2个，根据每月货量调整毛利率0.5-1%收取。</p>
+                                <p class="text-gray-600"><span class="font-medium">UniUni：</span>目前业务刚刚开始启动，业务量不大，客户1个。收取客户1%固定毛利率。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-gray-200 mt-16">
+        <div class="container mx-auto px-4 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p class="text-gray-500 text-sm">© 2023 物流业务分析平台. 保留所有权利.</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-500 hover:text-primary transition-colors">
+                        <i class="fa fa-question-circle"></i>
+                        <span class="ml-1">帮助中心</span>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-primary transition-colors">
+                        <i class="fa fa-envelope"></i>
+                        <span class="ml-1">联系我们</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // 初始化利润率图表
+        document.addEventListener('DOMContentLoaded', function() {
+            // 图表数据
+            const ctx = document.getElementById('profitMarginChart').getContext('2d');
+            const profitMarginChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['UPS/FEDEX/DHL', '北京/上海邮政', '菜鸟/DHL', '荷兰邮政'],
+                    datasets: [{
+                        label: '利润率 (%)',
+                        data: [1.25, 0.3, 0.8, 0.75],
+                        backgroundColor: [
+                            'rgba(22, 93, 255, 0.7)',
+                            'rgba(54, 207, 201, 0.7)',
+                            'rgba(114, 46, 209, 0.7)',
+                            'rgba(250, 173, 20, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(22, 93, 255, 1)',
+                            'rgba(54, 207, 201, 1)',
+                            'rgba(114, 46, 209, 1)',
+                            'rgba(250, 173, 20, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `利润率: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 筛选功能
+            const filterTags = document.querySelectorAll('.filter-tag');
+            const businessCards = document.querySelectorAll('.business-card');
+            
+            filterTags.forEach(tag => {
+                tag.addEventListener('click', function() {
+                    // 更新活跃状态
+                    filterTags.forEach(t => t.classList.remove('active', 'bg-primary', 'text-white'));
+                    filterTags.forEach(t => t.classList.add('bg-gray-200', 'text-gray-700'));
+                    this.classList.add('active', 'bg-primary', 'text-white');
+                    this.classList.remove('bg-gray-200', 'text-gray-700');
+                    
+                    const filter = this.getAttribute('data-filter');
+                    
+                    // 筛选卡片
+                    businessCards.forEach(card => {
+                        if (filter === 'all' || card.getAttribute('data-category') === filter) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+            
+            // 搜索功能
+            const searchInput = document.getElementById('search-input');
+            
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                businessCards.forEach(card => {
+                    const cardText = card.textContent.toLowerCase();
+                    if (cardText.includes(searchTerm)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+            
+            // 滚动时导航栏效果
+            window.addEventListener('scroll', function() {
+                const header = document.querySelector('header');
+                if (window.scrollY > 10) {
+                    header.classList.add('py-2', 'shadow');
+                    header.classList.remove('py-4', 'shadow-sm');
+                } else {
+                    header.classList.add('py-4', 'shadow-sm');
+                    header.classList.remove('py-2', 'shadow');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
